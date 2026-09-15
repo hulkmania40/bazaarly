@@ -1,8 +1,9 @@
 "use client";
 
 import { useRole } from "@/lib/hooks/useRole";
+import { signOut } from "next-auth/react";
 import type { Role } from "@/lib/types";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Package, ShoppingCart, Store, ShieldCheck, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,14 +32,11 @@ const roleLinks: Record<Role, { href: string; label: string; icon: React.Element
 
 export function Navbar() {
   const { role, isAuthenticated, isLoading } = useRole();
-  const router = useRouter();
   const pathname = usePathname();
   const links = role ? roleLinks[role] : [];
 
-  const handleSignOut = async () => {
-    await fetch("/api/auth/signout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/login" });
   };
 
   return (
