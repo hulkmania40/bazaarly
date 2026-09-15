@@ -1,13 +1,16 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 
-const protectedRoutes = ["/customer", "/seller", "/admin"];
 const publicRoutes = ["/login", "/register"];
 const adminRoutes = ["/admin"];
 const sellerRoutes = ["/seller"];
 const customerRoutes = ["/customer"];
 
 export async function middleware(request: NextRequest) {
+  if (process.env.NEXT_PUBLIC_ENABLE_PROTECTED_ROUTES !== "true") {
+    return NextResponse.next();
+  }
+
   const session = await auth();
   const { pathname } = request.nextUrl;
   const isAuthenticated = !!session?.user;
