@@ -40,14 +40,14 @@ function SelectContent({ className, children, position = "popper", ...props }: R
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "bg-popover text-popover-foreground border max-h-96 min-w-[8rem] overflow-hidden rounded-md border shadow-md",
+          "bg-popover text-popover-foreground border max-h-96 min-w-32 overflow-hidden rounded-md shadow-md",
           position === "popper" && "translate-y-1",
           className
         )}
         position={position}
         {...props}
       >
-        <SelectPrimitive.Viewport className={cn("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1")}>
+        <SelectPrimitive.Viewport className={cn("p-1", position === "popper" && "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width) scroll-my-1")}>
           {children}
         </SelectPrimitive.Viewport>
       </SelectPrimitive.Content>
@@ -59,7 +59,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      className={cn("flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className)}
+      className={cn("flex w-full cursor-default items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50", className)}
       {...props}
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
