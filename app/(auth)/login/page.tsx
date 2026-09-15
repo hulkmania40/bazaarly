@@ -3,20 +3,16 @@
 import { signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [callbackUrl, setCallbackUrl] = useState("/customer");
-  const router = useRouter();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -27,20 +23,13 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     try {
-      const res = await signIn("credentials", {
+      await signIn("credentials", {
         email,
         password,
-        redirect: false,
         callbackUrl,
       });
-      if (res?.error) {
-        setError("Invalid email or password");
-      } else if (res?.ok) {
-        router.push(callbackUrl);
-      }
     } finally {
       setLoading(false);
     }
@@ -55,12 +44,6 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertTriangle className="size-4" />
-                {error}
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
