@@ -1,16 +1,18 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [callbackUrl, setCallbackUrl] = useState("/customer");
 
@@ -25,11 +27,20 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await signIn("credentials", {
+      const res = await signIn("credentials", {
         email,
         password,
+        redirect: false,
         callbackUrl,
       });
+      if (res?.error) {
+        setError("Invalid email or password");
+      } else if (res?.ok) {
+        const session = await getSession();
+        const userRole = (session?.user as any)?.role;
+        const roleUrl = userRole === "admin" ? "/admin" : userRole === "seller" ? "/seller" : "/customer";
+        window.location.href = roleUrl;
+      }
     } finally {
       setLoading(false);
     }
@@ -44,6 +55,12 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertTriangle className="size-4" />
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
