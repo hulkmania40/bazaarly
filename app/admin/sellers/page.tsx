@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getSellers } from "@/lib/api/sellers";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +11,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
 
 export default function AdminSellersPage() {
-  const { data: sellers, isLoading, error, refetch } = useQuery({ queryKey: ["sellers"], queryFn: getSellers });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+
+  const { data: sellers, isLoading, error, refetch } = useQuery({
+    queryKey: ["sellers"],
+    queryFn: () => getSellers(accessToken),
+    enabled: !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-4xl mx-auto p-6 space-y-4"><Skeleton className="h-8 w-40" />{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6"><ErrorState message="Could not load sellers." onRetry={() => refetch()} /></div>;

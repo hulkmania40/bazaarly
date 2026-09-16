@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getPendingProducts, approveProduct, rejectProduct } from "@/lib/api/products";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,18 +19,24 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 export default function AdminProductsPage() {
-  const { data: products, isLoading, error, refetch } = useQuery({ queryKey: ["pending-products"], queryFn: getPendingProducts });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+  const { data: products, isLoading, error, refetch } = useQuery({
+    queryKey: ["pending-products"],
+    queryFn: () => getPendingProducts(accessToken ?? ""),
+    enabled: !!accessToken,
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => approveProduct(id),
+    mutationFn: (id: string) => approveProduct(accessToken ?? "", id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["pending-products"] }); toast({ title: "Product approved" }); },
   });
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => rejectProduct(id, rejectReason),
+    mutationFn: (id: string) => rejectProduct(accessToken ?? "", id, rejectReason),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["pending-products"] }); setRejectId(null); setRejectReason(""); toast({ title: "Product rejected" }); },
   });
 

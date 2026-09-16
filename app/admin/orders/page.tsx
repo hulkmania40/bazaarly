@@ -1,9 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getAllOrders } from "@/lib/api/orders";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -12,7 +14,14 @@ import { ClipboardList } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default function AdminOrdersPage() {
-  const { data: orders, isLoading, error, refetch } = useQuery({ queryKey: ["all-orders"], queryFn: getAllOrders });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+
+  const { data: orders, isLoading, error, refetch } = useQuery({
+    queryKey: ["all-orders"],
+    queryFn: () => getAllOrders(accessToken ?? ""),
+    enabled: !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-4xl mx-auto p-6 space-y-4"><Skeleton className="h-8 w-40" />{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6"><ErrorState message="Could not load orders." onRetry={() => refetch()} /></div>;

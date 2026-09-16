@@ -1,13 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const mockCredentials: Record<string, { password: string; role: string }> = {
-  "admin@bazaarly.com": { password: "admin123", role: "admin" },
-  "seller1@bazaarly.com": { password: "seller123", role: "seller" },
-  "seller2@bazaarly.com": { password: "seller123", role: "seller" },
-  "customer@bazaarly.com": { password: "customer123", role: "customer" },
-};
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
@@ -16,31 +9,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const email = (credentials?.email as string) || "";
-        const password = (credentials?.password as string) || "";
-        const entry = Object.entries(mockCredentials).find(([e]) => e === email);
-        if (!entry || entry[1].password !== password) return null;
-        return {
-          id: email,
-          name: email.split("@")[0],
-          email,
-          role: entry[1].role,
-        };
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials?.email,
+              password: credentials?.password,
+            }),
+          });
+
+          if (!res.ok) return null;
+
+          const data = await res.json();
+          return {
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role,
+            accessToken: data.access_token,
+          };
+        } catch {
+          return null;
+        }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user && (user as any).role) {
+      if (user) {
         (token as any).role = (user as any).role;
+        (token as any).accessToken = (user as any).accessToken;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = (token.sub ?? session.user.email) as string;
-        // @ts-ignore - role is added via jwt callback
-        session.user.role = (token as any).role;
+        (session.user as any).role = (token as any).role;
+        (session.user as any).accessToken = (token as any).accessToken;
       }
       return session;
     },

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { createProduct } from "@/lib/api/products";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -14,30 +15,34 @@ import { Textarea } from "@/components/ui/textarea";
 export default function NewProductPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+  const { toast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const { toast } = useToast();
-  const mutation = useMutation({
-    mutationFn: () => createProduct({
-      sellerId: "seller-1",
-      title,
-      description,
-      price: parseFloat(price),
-      imageUrl: imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
-      status: "pending",
-    }),
-    onSuccess: () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accessToken) return;
+    setSaving(true);
+    try {
+      await createProduct(accessToken, {
+        title,
+        description,
+        price: parseFloat(price),
+        image_url: imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
+      });
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       toast({ title: "Product created!", description: "Pending admin approval." });
       router.push("/seller/products");
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutation.mutate();
+    } catch (err) {
+      toast({ title: "Creation failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -67,7 +72,7 @@ export default function NewProductPage() {
               <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
             </div>
             <div className="flex gap-3">
-              <Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? "Creating..." : "Create Product"}</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Creating..." : "Create Product"}</Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>
           </form>

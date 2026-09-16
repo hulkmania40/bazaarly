@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getProductsBySeller } from "@/lib/api/products";
 import { getOrdersBySeller } from "@/lib/api/orders";
-import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,18 @@ import Link from "next/link";
 
 export default function SellerDashboard() {
   const { data: session } = useSession();
-  const sellerId = (session?.user as { id?: string } | undefined)?.id ?? "seller-1";
-  const { data: products, isLoading: pLoading, error: pError } = useQuery({ queryKey: ["seller-products", sellerId], queryFn: () => getProductsBySeller(sellerId) });
-  const { data: orders, isLoading: oLoading, error: oError } = useQuery({ queryKey: ["seller-orders", sellerId], queryFn: () => getOrdersBySeller(sellerId) });
+  const accessToken = (session?.user as any)?.accessToken;
+  const sellerId = (session?.user as { id?: string } | undefined)?.id ?? "";
+  const { data: products, isLoading: pLoading, error: pError } = useQuery({
+    queryKey: ["seller-products", sellerId],
+    queryFn: () => getProductsBySeller(sellerId, accessToken),
+    enabled: !!sellerId && !!accessToken,
+  });
+  const { data: orders, isLoading: oLoading, error: oError } = useQuery({
+    queryKey: ["seller-orders", sellerId],
+    queryFn: () => getOrdersBySeller(accessToken),
+    enabled: !!accessToken,
+  });
 
   const pending = products?.filter((p) => p.status === "pending").length ?? 0;
   const approved = products?.filter((p) => p.status === "approved").length ?? 0;

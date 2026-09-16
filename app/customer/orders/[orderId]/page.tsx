@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getOrderById } from "@/lib/api/orders";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -10,21 +11,31 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/components/ui/toast";
 
 const statusSteps = ["paid", "accepted", "out_for_delivery", "delivered"] as const;
 
 export default function OrderDetailPage() {
   const params = useParams();
   const orderId = params.orderId as string;
-  const { data: order, isLoading, error, refetch } = useQuery({ queryKey: ["order", orderId], queryFn: () => getOrderById(orderId), enabled: !!orderId });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: order, isLoading, error, refetch } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: () => getOrderById(accessToken ?? "", orderId),
+    enabled: !!orderId && !!accessToken,
+  });
+
+  const currentStepIndex = order ? statusSteps.indexOf(order.status as typeof statusSteps[number]) : -1;
 
   if (isLoading) return <div className="max-w-3xl mx-auto p-6 space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-64" /></div>;
   if (error || !order) return <div className="max-w-3xl mx-auto p-6"><ErrorState message="Could not load order details." onRetry={() => refetch()} /></div>;
-
-  const currentStepIndex = statusSteps.indexOf(order.status);
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
@@ -37,9 +48,7 @@ export default function OrderDetailPage() {
         <StatusBadge status={order.status} />
       </div>
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><MapPin className="size-4" />Tracking</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MapPin className="size-4" />Tracking</CardTitle></CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             {statusSteps.map((step, i) => (

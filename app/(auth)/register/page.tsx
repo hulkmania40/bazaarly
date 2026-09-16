@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,17 +23,32 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await signIn("credentials", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.detail?.[0]?.msg ?? "Registration failed");
+        return;
+      }
+
+      const loginRes = await signIn("credentials", {
         email,
         password,
         redirect: false,
         callbackUrl: `/${role}`,
       });
-      if (res?.error) {
-        setError("Invalid credentials");
-      } else if (res?.ok) {
+
+      if (loginRes?.error) {
+        setError("Account created — please sign in.");
+      } else if (loginRes?.ok) {
         router.push(`/${role}`);
       }
+    } catch {
+      setError("Something went wrong. Try again.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +73,7 @@ export default function RegisterPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Min 8 characters" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">I want to</Label>

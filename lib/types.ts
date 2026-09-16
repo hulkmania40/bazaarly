@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  avatar_url: string | null;
 }
 
 export interface Seller {
@@ -13,6 +14,7 @@ export interface Seller {
   storeName: string;
   description: string;
   avatarUrl: string;
+  productCount: number | null;
 }
 
 export interface Product {
@@ -21,10 +23,35 @@ export interface Product {
   title: string;
   description: string;
   price: number;
+  currency: string;
   imageUrl: string;
   status: "pending" | "approved" | "rejected";
   rejectionReason?: string;
+  approvedAt?: string | null;
+  approvedBy?: string | null;
   createdAt: string;
+}
+
+export interface OrderItem {
+  id: string;
+  productId: string;
+  title: string;
+  price: number;
+  quantity: number;
+  imageUrl: string;
+}
+
+export interface Order {
+  id: string;
+  customerId: string;
+  sellerId: string;
+  items: OrderItem[];
+  total: number;
+  currency: string;
+  status: string;
+  paymentRef: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CartItem {
@@ -34,24 +61,4 @@ export interface CartItem {
   price: number;
   imageUrl: string;
   quantity: number;
-}
-
-export interface OrderItem {
-  productId: string;
-  sellerId: string;
-  title: string;
-  price: number;
-  imageUrl: string;
-  quantity: number;
-}
-
-export interface Order {
-  id: string;
-  customerId: string;
-  sellerId: string;
-  items: OrderItem[];
-  total: number;
-  status: "paid" | "accepted" | "out_for_delivery" | "delivered";
-  createdAt: string;
-  updatedAt: string;
 }

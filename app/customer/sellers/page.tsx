@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getSellers } from "@/lib/api/sellers";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,7 +12,14 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { EmptyState } from "@/components/shared/EmptyState";
 
 export default function SellersPage() {
-  const { data, isLoading, error, refetch } = useQuery({ queryKey: ["sellers"], queryFn: getSellers });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["sellers"],
+    queryFn: () => getSellers(accessToken),
+    enabled: !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-6xl mx-auto p-6"><Skeleton className="h-8 w-40 mb-6" /><div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-40" />)}</div></div>;
   if (error) return <div className="max-w-6xl mx-auto p-6"><ErrorState message="Could not load sellers." onRetry={() => refetch()} /></div>;

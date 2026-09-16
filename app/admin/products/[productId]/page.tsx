@@ -1,21 +1,29 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getProductById } from "@/lib/api/products";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ArrowLeft } from "lucide-react";
 
 export default function AdminProductReviewPage() {
   const params = useParams();
   const productId = params.productId as string;
-  const { data: product, isLoading, error, refetch } = useQuery({ queryKey: ["product", productId], queryFn: () => getProductById(productId), enabled: !!productId });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+
+  const { data: product, isLoading, error, refetch } = useQuery({
+    queryKey: ["product", productId],
+    queryFn: () => getProductById(productId, accessToken),
+    enabled: !!productId && !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-2xl mx-auto p-6"><Skeleton className="h-64" /></div>;
   if (error || !product) return <div className="max-w-2xl mx-auto p-6"><ErrorState message="Product not found." onRetry={() => refetch()} /></div>;

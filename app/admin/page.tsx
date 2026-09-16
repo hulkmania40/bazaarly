@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getPendingProducts } from "@/lib/api/products";
 import { getSellers } from "@/lib/api/sellers";
 import { getAllOrders } from "@/lib/api/orders";
@@ -11,9 +12,24 @@ import { ClipboardList, Users, ShoppingBag, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AdminDashboard() {
-  const { data: pending, isLoading: pLoading, error: pError } = useQuery({ queryKey: ["pending-products"], queryFn: getPendingProducts });
-  const { data: sellers, isLoading: sLoading, error: sError } = useQuery({ queryKey: ["sellers"], queryFn: getSellers });
-  const { data: orders, isLoading: oLoading, error: oError } = useQuery({ queryKey: ["all-orders"], queryFn: getAllOrders });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+
+  const { data: pending, isLoading: pLoading, error: pError } = useQuery({
+    queryKey: ["pending-products"],
+    queryFn: () => getPendingProducts(accessToken ?? ""),
+    enabled: !!accessToken,
+  });
+  const { data: sellers, isLoading: sLoading, error: sError } = useQuery({
+    queryKey: ["sellers"],
+    queryFn: () => getSellers(accessToken),
+    enabled: !!accessToken,
+  });
+  const { data: orders, isLoading: oLoading, error: oError } = useQuery({
+    queryKey: ["all-orders"],
+    queryFn: () => getAllOrders(accessToken ?? ""),
+    enabled: !!accessToken,
+  });
 
   if (pLoading || sLoading || oLoading) return <div className="max-w-4xl mx-auto p-6 grid sm:grid-cols-4 gap-4">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32" />)}</div>;
   const error = pError || sError || oError;

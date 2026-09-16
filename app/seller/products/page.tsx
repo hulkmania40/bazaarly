@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getProductsBySeller } from "@/lib/api/products";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { getProductsBySeller, createProduct, updateProduct } from "@/lib/api/products";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,8 +15,13 @@ import { Plus, Pencil } from "lucide-react";
 
 export default function SellerProductsPage() {
   const { data: session } = useSession();
-  const sellerId = (session?.user as { id?: string } | undefined)?.id ?? "seller-1";
-  const { data: products, isLoading, error, refetch } = useQuery({ queryKey: ["seller-products", sellerId], queryFn: () => getProductsBySeller(sellerId) });
+  const accessToken = (session?.user as any)?.accessToken;
+  const sellerId = (session?.user as { id?: string } | undefined)?.id ?? "";
+  const { data: products, isLoading, error, refetch } = useQuery({
+    queryKey: ["seller-products", sellerId],
+    queryFn: () => getProductsBySeller(sellerId, accessToken),
+    enabled: !!sellerId && !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-4xl mx-auto p-6 space-y-4"><Skeleton className="h-8 w-40" />{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6"><ErrorState message="Could not load products." onRetry={() => refetch()} /></div>;

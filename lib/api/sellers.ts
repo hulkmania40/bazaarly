@@ -1,51 +1,51 @@
-import type { Seller } from "@/lib/types";
+import { apiFetchAuth } from "./endpoints";
+import type { Product, Seller } from "@/lib/types";
 
-const delay = () => new Promise((r) => setTimeout(r, 300 + Math.random() * 300));
-
-let sellers: Seller[] = [
-  {
-    id: "seller-1",
-    userId: "seller-1",
-    storeName: "Green Valley Farm",
-    description: "Organic produce grown with sustainable farming practices.",
-    avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=GV",
-  },
-  {
-    id: "seller-2",
-    userId: "seller-2",
-    storeName: "Tech Gadgets Hub",
-    description: "Latest gadgets, accessories, and electronics at great prices.",
-    avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=TG",
-  },
-  {
-    id: "seller-3",
-    userId: "seller-3",
-    storeName: "Artisan Bakery",
-    description: "Freshly baked bread, pastries, and cakes daily.",
-    avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=AB",
-  },
-  {
-    id: "seller-4",
-    userId: "seller-4",
-    storeName: "Home Comforts",
-    description: "Handmade home decor, candles, and cozy accessories.",
-    avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=HC",
-  },
-  {
-    id: "seller-5",
-    userId: "seller-5",
-    storeName: "FitGear Pro",
-    description: "Premium fitness equipment and athletic wear for all levels.",
-    avatarUrl: "https://api.dicebear.com/7.x/initials/svg?seed=FG",
-  },
-];
-
-export async function getSellers(): Promise<Seller[]> {
-  await delay();
-  return [...sellers];
+export async function getSellers(accessToken?: string): Promise<Seller[]> {
+  const data = await apiFetchAuth<any[]>("/api/v1/sellers", accessToken);
+  return data.map(mapSeller);
 }
 
-export async function getSellerById(sellerId: string): Promise<Seller | undefined> {
-  await delay();
-  return sellers.find((s) => s.id === sellerId);
+export async function getSellerById(sellerId: string, accessToken?: string): Promise<Seller> {
+  const data = await apiFetchAuth<any>(`/api/v1/sellers/${sellerId}`, accessToken);
+  return mapSeller(data);
+}
+
+export async function getApprovedProductsBySeller(sellerId: string, accessToken?: string): Promise<Product[]> {
+  const data = await apiFetchAuth<any[]>(`/api/v1/sellers/${sellerId}/products`, accessToken);
+  return data.filter((p) => p.status === "approved").map((raw: any) => ({
+    id: raw.id,
+    sellerId: raw.seller_id,
+    title: raw.title,
+    description: raw.description,
+    price: raw.price,
+    currency: raw.currency ?? "USD",
+    imageUrl: raw.image_url,
+    status: raw.status,
+    createdAt: raw.created_at,
+  }));
+}
+
+export async function getMySeller(accessToken: string): Promise<Seller> {
+  const data = await apiFetchAuth<any>("/api/v1/sellers/me", accessToken);
+  return mapSeller(data);
+}
+
+export async function updateMySeller(accessToken: string, data: Record<string, any>): Promise<Seller> {
+  const result = await apiFetchAuth<any>("/api/v1/sellers/me", accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  return mapSeller(result);
+}
+
+function mapSeller(raw: any): Seller {
+  return {
+    id: raw.id,
+    userId: raw.user_id,
+    storeName: raw.store_name,
+    description: raw.description,
+    avatarUrl: raw.avatar_url ?? "",
+    productCount: raw.product_count ?? null,
+  };
 }

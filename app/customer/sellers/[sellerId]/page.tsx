@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getSellerById } from "@/lib/api/sellers";
-import { getApprovedProductsBySeller } from "@/lib/api/products";
+import { useSession } from "next-auth/react";
+import { getSellerById, getApprovedProductsBySeller } from "@/lib/api/sellers";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,18 @@ import { useToast } from "@/components/ui/toast";
 export default function SellerDetailPage() {
   const params = useParams();
   const sellerId = params.sellerId as string;
-  const { data: seller, isLoading: sellerLoading, error: sellerError, refetch: refetchSeller } = useQuery({ queryKey: ["seller", sellerId], queryFn: () => getSellerById(sellerId), enabled: !!sellerId });
-  const { data: products, isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery({ queryKey: ["seller-products", sellerId], queryFn: () => getApprovedProductsBySeller(sellerId), enabled: !!sellerId });
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
+  const { data: seller, isLoading: sellerLoading, error: sellerError, refetch: refetchSeller } = useQuery({
+    queryKey: ["seller", sellerId],
+    queryFn: () => getSellerById(sellerId, accessToken),
+    enabled: !!sellerId && !!accessToken,
+  });
+  const { data: products, isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery({
+    queryKey: ["seller-products", sellerId],
+    queryFn: () => getApprovedProductsBySeller(sellerId, accessToken),
+    enabled: !!sellerId && !!accessToken,
+  });
   const { toast } = useToast();
   const { addItem } = useCart();
 

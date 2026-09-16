@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getOrdersByCustomer } from "@/lib/api/orders";
 import { useSession } from "next-auth/react";
+import { getOrdersByCustomer } from "@/lib/api/orders";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,13 @@ import { Package, Plus } from "lucide-react";
 
 export default function OrdersPage() {
   const { data: session } = useSession();
-  const customerId = (session?.user as { id?: string } | undefined)?.id ?? "customer-1";
-  const { data: orders, isLoading, error, refetch } = useQuery({ queryKey: ["customer-orders", customerId], queryFn: () => getOrdersByCustomer(customerId) });
+  const accessToken = (session?.user as any)?.accessToken;
+
+  const { data: orders, isLoading, error, refetch } = useQuery({
+    queryKey: ["customer-orders"],
+    queryFn: () => getOrdersByCustomer(accessToken ?? ""),
+    enabled: !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-4xl mx-auto p-6 space-y-4"><Skeleton className="h-8 w-40" />{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6"><ErrorState message="Could not load orders." onRetry={() => refetch()} /></div>;

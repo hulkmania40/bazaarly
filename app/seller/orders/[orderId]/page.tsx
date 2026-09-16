@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getOrderById, updateOrderStatus } from "@/lib/api/orders";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -18,16 +19,22 @@ import { Separator } from "@/components/ui/separator";
 export default function SellerOrderDetailPage() {
   const params = useParams();
   const orderId = params.orderId as string;
+  const { data: session } = useSession();
+  const accessToken = (session?.user as any)?.accessToken;
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: order, isLoading, error, refetch } = useQuery({ queryKey: ["order", orderId], queryFn: () => getOrderById(orderId), enabled: !!orderId });
+  const { data: order, isLoading, error, refetch } = useQuery({
+    queryKey: ["order", orderId],
+    queryFn: () => getOrderById(accessToken ?? "", orderId),
+    enabled: !!orderId && !!accessToken,
+  });
 
   const acceptMutation = useMutation({
-    mutationFn: () => updateOrderStatus(orderId, "accepted"),
+    mutationFn: () => updateOrderStatus(accessToken ?? "", orderId, "accepted"),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["order", orderId] }); queryClient.invalidateQueries({ queryKey: ["seller-orders"] }); toast({ title: "Order accepted" }); refetch(); },
   });
   const deliverMutation = useMutation({
-    mutationFn: () => updateOrderStatus(orderId, "out_for_delivery"),
+    mutationFn: () => updateOrderStatus(accessToken ?? "", orderId, "out_for_delivery"),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["order", orderId] }); queryClient.invalidateQueries({ queryKey: ["seller-orders"] }); toast({ title: "Order marked for delivery" }); refetch(); },
   });
 

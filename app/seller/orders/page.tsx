@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getOrdersBySeller } from "@/lib/api/orders";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { getOrdersBySeller, updateOrderStatus } from "@/lib/api/orders";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,11 +13,19 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ClipboardList } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 export default function SellerOrdersPage() {
   const { data: session } = useSession();
-  const sellerId = (session?.user as { id?: string } | undefined)?.id ?? "seller-1";
-  const { data: orders, isLoading, error, refetch } = useQuery({ queryKey: ["seller-orders", sellerId], queryFn: () => getOrdersBySeller(sellerId) });
+  const accessToken = (session?.user as any)?.accessToken;
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: orders, isLoading, error, refetch } = useQuery({
+    queryKey: ["seller-orders"],
+    queryFn: () => getOrdersBySeller(accessToken ?? ""),
+    enabled: !!accessToken,
+  });
 
   if (isLoading) return <div className="max-w-4xl mx-auto p-6 space-y-4"><Skeleton className="h-8 w-40" />{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>;
   if (error) return <div className="max-w-4xl mx-auto p-6"><ErrorState message="Could not load orders." onRetry={() => refetch()} /></div>;

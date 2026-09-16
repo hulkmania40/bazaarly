@@ -78,9 +78,11 @@ export default function LoginPage() {
           </p>
           <div className="mt-4 p-3 rounded-md bg-muted text-xs text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Mock accounts:</p>
-            <p>Admin: admin@bazaarly.com / admin123</p>
-            <p>Seller: seller1@bazaarly.com / seller123</p>
-            <p>Customer: customer@bazaarly.com / customer123</p>
+            <p>Admin: admin@bazaarly.test / password123</p>
+            <p>Seller: seller@bazaarly.test / password123</p>
+            <p>Seller: seller2@bazaarly.test / password123</p>
+            <p>Customer: customer@bazaarly.test / password123</p>
+            <p>Customer: customer2@bazaarly.test / password123</p>
           </div>
         </CardContent>
       </Card>
