@@ -1,7 +1,8 @@
 "use client";
 
 import { signIn, getSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,24 +15,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [callbackUrl, setCallbackUrl] = useState("/customer");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      setCallbackUrl(params.get("callbackUrl") ?? "/customer");
-    }
-  }, []);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
       const res = await signIn("credentials", {
         email,
         password,
         redirect: false,
-        callbackUrl,
       });
       if (res?.error) {
         setError("Invalid email or password");
@@ -39,7 +33,7 @@ export default function LoginPage() {
         const session = await getSession();
         const userRole = (session?.user as any)?.role;
         const roleUrl = userRole === "admin" ? "/admin" : userRole === "seller" ? "/seller" : "/customer";
-        window.location.href = roleUrl;
+        router.push(roleUrl);
       }
     } finally {
       setLoading(false);
