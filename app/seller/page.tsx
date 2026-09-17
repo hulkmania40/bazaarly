@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { getProductsBySeller } from "@/lib/api/products";
+import { getMyProducts } from "@/lib/api/products";
 import { getOrdersBySeller } from "@/lib/api/orders";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +19,8 @@ export default function SellerDashboard() {
   const sellerId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const { data: products, isLoading: pLoading, error: pError } = useQuery({
     queryKey: ["seller-products", sellerId],
-    queryFn: () => getProductsBySeller(sellerId, accessToken),
-    enabled: !!sellerId && !!accessToken,
+    queryFn: () => getMyProducts(accessToken),
+    enabled: !!accessToken,
   });
   const { data: orders, isLoading: oLoading, error: oError } = useQuery({
     queryKey: ["seller-orders", sellerId],
